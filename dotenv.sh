@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Usage: ./dotenv [env_file] -- <command_to_run>
+# dotenv.sh
+# Usage: ./dotenv.sh [env_file] -- <command_to_run>
 
 # Default to .env if no env_file is provided
 if [ "$1" == "--" ]; then
@@ -28,19 +29,26 @@ fi
 # Read .env file and build the environment variables string
 ENV_VARS=""
 while IFS='=' read -r key value; do
-  # Skip lines that are comments or empty
+  # Skip comments and empty lines
   if [[ "$key" =~ ^#.*$ ]] || [[ -z "$key" ]]; then
     continue
   fi
-  # Trim surrounding whitespace
-  key=$(echo "$key" | xargs)
-  value=$(echo "$value" | xargs)
-  # Escape double quotes in value
-  value=$(echo "$value" | sed 's/"/\\"/g')
-  # Append to environment variables string
+
+  # Trim whitespace from key and value
+  key=$(echo "$key" | tr -d '[:space:]')
+  value=$(echo "$value" | tr -d '[:space:]')
+
+  # Remove surrounding quotes if present
+  if [[ "$value" =~ ^\".*\"$ ]] || [[ "$value" =~ ^\'.*\'$ ]]; then
+    value="${value:1:${#value}-2}"
+  fi
+
+  # Escape double quotes in the value
+  value=${value//\"/\\\"}
+
+  # Append to the environment variables string
   ENV_VARS+="$key=\"$value\" "
 done < "$ENV_FILE"
 
-# Execute the command with the environment variables in a subshell
-# Use "$@" to preserve all quotes and special characters in the original command
-eval "$ENV_VARS" "$@"
+# Execute the command with the environment variables prepended
+eval "$ENV_VARS""$@"
