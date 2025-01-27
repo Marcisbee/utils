@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# dotenv.sh
 # Usage: ./dotenv.sh [env_file] -- <command_to_run>
 
 # Default to .env if no env_file is provided
