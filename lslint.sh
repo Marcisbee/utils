@@ -155,7 +155,9 @@ check_file_paths() {
 
   # Print invalid paths in red
   echo "$file_paths_invalid" | while read -r path; do
-    echo -e "\033[31minvalid\033[0m \033[4;30m${path#\/}\033[0m"
+    if [[ -n "$path" ]]; then
+      echo -e "\033[31minvalid\033[0m \033[4;30m${path#\/}\033[0m"
+    fi
   done
 }
 
