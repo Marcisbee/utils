@@ -162,7 +162,7 @@ check_file_paths() {
 # Main function to execute the script
 main() {
 # Initialize rule list with .lslint file path
-  LSLINT_RULES=(".lslint")
+  LSLINT_RULES=("^/\.lslint\$")
 
   # Read and parse .lslint if it exists
   if [[ -f .lslint ]]; then
