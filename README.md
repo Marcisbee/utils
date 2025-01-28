@@ -26,18 +26,17 @@ This script helps you lint file paths in your project based on rules specified i
 
 ### Usage:
 ```sh
+# .lslint
+# /package.json
+# /node_modules/**/*
+# /src/<kebabcase>**/<kebabcase>.<:tsx|ts>
+# /src/<kebabcase>**/<kebabcase>.module.css
+# /test/**/<kebabcase>.test.ts
+
 ./lslint.sh
 ```
 
 Before running this script, please create a `.lslint` configuration file in your project root directory. This file should contain valid file patterns you want to lint. For example:
-
-```plaintext
-/package.json
-/node_modules/**/*
-/src/<kebabcase>**/<kebabcase>.<:tsx|ts>
-/src/<kebabcase>**/<kebabcase>.module.css
-/test/**/<kebabcase>.test.ts
-```
 
 ### Example Syntax Matches:
 
@@ -68,6 +67,13 @@ Before running this script, please create a `.lslint` configuration file in your
 |                             | `/test/component-setup/b/component-files/paper-bag.css` |
 
 ---
+
+# Development
+Linting:
+```sh
+curl -SsfL https://marcisbee.github.io/gh/dl.sh | bash -s -- --repo koalaman/shellcheck
+./shellcheck lslint.sh
+```
 
 # License
 [MIT](LICENCE) &copy; [Marcis Bergmanis](https://twitter.com/marcisbee)
