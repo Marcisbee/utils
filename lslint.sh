@@ -65,13 +65,9 @@ parse_lslint_rules() {
 
       # Determine the type of rule (file, directory, or all directories)
       if [[ $rule == *"/\*\*/\*" ]]; then
-        rule_type="all"
         rule="${rule%/*/*}/.*"
       elif [[ $rule == *"/\*" ]]; then
-        rule_type="directory"
         rule="${rule%/*}[^\/]+$"
-      else
-        rule_type="file"
       fi
 
       # Replace ** with regex pattern to match zero, one, or multiple directories
@@ -140,10 +136,10 @@ check_file_paths() {
   # If .gitignore exists, use it to filter files
   if [ -e ".gitignore" ]; then
     echo -e "\033[33mFound .gitignore, will use it to ignore files\033[0m\n"
-    local file_paths=$(git ls-files --cached --others --exclude-standard | sed 's|^|/|')
+    file_paths=$(git ls-files --cached --others --exclude-standard | sed 's|^|/|')
   else
     # Otherwise, find all files in the directory
-    local file_paths=$(find . -type f | sed 's|^./|/|')
+    file_paths=$(find . -type f | sed 's|^./|/|')
   fi
 
   # Count total number of files checked
@@ -163,7 +159,7 @@ check_file_paths() {
 
 # Main function to execute the script
 main() {
-# Initialize rule list with .lslint file path
+  # Initialize rule list with .lslint file path
   LSLINT_RULES=("^/\.lslint\$")
 
   # Read and parse .lslint if it exists
@@ -177,11 +173,11 @@ main() {
   check_file_paths
 
   # Print the total number of files checked
-  echo -e "\n\033[0;34mChecked ${file_count} files.\033[0m"
+  echo -e "\n\033[0;34mChecked ${file_count[0]} files.\033[0m"
 
   # If any errors are found, print the count in red and exit with error status
-  if [[ $error_count -ne 0 ]]; then
-    echo -e "\033[31mFound ${error_count} errors.\033[0m"
+  if [[ ${error_count[0]} -ne 0 ]]; then
+    echo -e "\033[31mFound ${error_count[0]} errors.\033[0m"
     exit 1
   fi
 
