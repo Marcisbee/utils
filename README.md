@@ -103,8 +103,8 @@ curl -SsfL https://marcisbee.github.io/utils/tasks.sh | bash -s -- <task_name|ta
    #!/usr/bin/env bash
 
    task_dev() {
-       start_task build
-       start_task db+server
+     start_task build
+     start_task db+server
    }
 
    task_server() {
