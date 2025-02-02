@@ -82,18 +82,26 @@ start_task() {
   wait "${RUNNING_TASKS[@]}"
 }
 
+# Function to list available tasks
+list_tasks() {
+  echo "Available tasks:"
+  local TASKS=()
+  for name in $(compgen -A function | grep '^task_'); do
+    TASKS+=("- ${name#task_}")
+  done
+  printf "%s\n" "${TASKS[@]}"
+}
+
 # Function to perform cleanup
 cleanup() {
-  echo -e "\033[33m[WARNING] Cleanup initiated due to script termination or interruption.\033[0m"
+  echo -e "\033[33m[INFO] Cleanup initiated.\033[0m"
 
   # Iterate over the array of running tasks and attempt to kill each one
   for pid in "${RUNNING_TASKS[@]}"; do
-    echo -e "\033[33m[WARNING] Stopping task with PID ${pid}.\033[0m"
     kill -TERM "$pid" 2>/dev/null || true
   done
 
   for pgid in "${RUNNING_GROUPS[@]}"; do
-    echo -e "\033[33m[WARNING] Stopping task group with PGID ${pgid}.\033[0m"
     kill -TERM -$pgid 2>/dev/null || true
   done
 
@@ -102,9 +110,6 @@ cleanup() {
   RUNNING_GROUPS=()
   echo -e "\033[33m[INFO] Cleanup completed.\033[0m"
 }
-
-# Set up the trap for cleanup
-trap cleanup EXIT
 
 # Check if task.sh exists and is readable
 if [ ! -r "task.sh" ]; then
@@ -117,9 +122,13 @@ source task.sh
 
 # Check if a task name is provided as an argument
 if [ $# -eq 0 ]; then
-  echo "Usage: $0 <task_name>"
+  # echo "Usage: $0 <task_name>"
+  list_tasks
   exit 1
 fi
+
+# Set up the trap for cleanup
+trap cleanup EXIT
 
 TASK_NAMES=("$@")
 for TASK_NAME in "${TASK_NAMES[@]}"; do
