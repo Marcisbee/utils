@@ -1,4 +1,5 @@
 # Various utilities
+
 This repository contains several shell utility scripts designed to facilitate various tasks in your development workflow.
 
 ## dotenv.sh
@@ -17,6 +18,12 @@ The `dotenv.sh` script loads environment variables from a `.env` file. This can 
 ./dotenv.sh -- node ./test.js
 ```
 
+or
+
+```sh
+curl -SsfL https://marcisbee.github.io/utils/dotenv.sh | bash -s -- -- node ./test.js
+```
+
 The script loads the environment variables from `.env` by default and runs the specified command, in this case, `node ./test.js`.
 
 ### Using a Custom Environment File:
@@ -25,6 +32,12 @@ If you need to load environment variables from a different file (e.g., for devel
 
 ```sh
 ./dotenv.sh .env.development -- node ./test.js
+```
+
+or
+
+```sh
+curl -SsfL https://marcisbee.github.io/utils/dotenv.sh | bash -s -- .env.development -- node ./test.js
 ```
 
 ## lslint.sh
@@ -68,6 +81,12 @@ The `tasks.sh` script allows you to define and execute shell functions as tasks.
 
 ```sh
 ./tasks.sh <task_name|task_group>
+```
+
+or
+
+```sh
+curl -SsfL https://marcisbee.github.io/utils/tasks.sh | bash -s -- <task_name|task_group>
 ```
 
 - **Single Task**: Execute the function by specifying its name, e.g., `./tasks.sh build`.
