@@ -1,5 +1,4 @@
 # Various utilities
-
 This repository contains several shell utility scripts designed to facilitate various tasks in your development workflow.
 
 ## dotenv.sh
