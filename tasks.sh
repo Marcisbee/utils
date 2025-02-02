@@ -84,7 +84,7 @@ start_task() {
     RUNNING_TASKS+=("$PID")
   done
 
-  wait
+  wait "${RUNNING_TASKS[@]}"
 }
 
 # Function to perform cleanup
@@ -99,7 +99,7 @@ cleanup() {
 
   # Check if pkill is available before attempting to use it
   if command -v pkill &> /dev/null; then
-    pkill -TERM -P "$$"       # Kill all direct child processes
+    pkill -TERM -P "$$"
     pkill -TERM -g "$$"
   fi
 
@@ -147,4 +147,4 @@ else
 fi
 
 # Return the highest exit status from all tasks
-exit "${TASK_STATUSES[*]:1}"
+exit ${TASK_STATUSES[*]}
