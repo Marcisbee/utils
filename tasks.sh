@@ -37,8 +37,9 @@
 # Functionality Overview:
 # The `start_task <task_name|task_group>` function is responsible for executing one or more tasks. When combined task names (e.g., `build+lint`) are provided, each specified task runs concurrently; otherwise, they run sequentially.
 
-# Array to store the PIDs of running tasks
+# Array to store the PIDs and PGIDs of running tasks
 RUNNING_TASKS=()
+RUNNING_GROUPS=()
 
 # Function to start a task and capture its output
 start_task() {
@@ -54,18 +55,9 @@ start_task() {
       continue  # Skip to the next task if this one doesn't exist
     fi
 
-    # Check if the task has already been started
-    for pid in "${RUNNING_TASKS[@]}"; do
-      if [ "$pid" -eq $$ ]; then
-        echo -e "\033[31m[ERROR] Task '${SINGLE_TASK}' is already running.\033[0m"
-        continue  # Skip to the next task if this one is already running
-      fi
-    done
-
-    # Start the task and store its PID
-    {
-     local task_name="${SINGLE_TASK}"
-     # Print a message indicating that the task has started
+    # Start the task in a new process group and store its PID and PGID
+    (
+      local task_name="${SINGLE_TASK}"
       echo -e "\033[32m[INFO] Starting '${task_name}'.\033[0m"
 
       task_"${task_name}" "$@"
@@ -77,13 +69,16 @@ start_task() {
       else
         echo -e "\033[31m[ERROR] Task '${task_name}' finished with an error status of ${TASK_STATUS}.\033[0m"
       fi
-    } &
+    ) &
     PID=$!
+    PGID=$(ps -o pgid= -p "$PID" | tr -d ' ')
 
-    # Add the current PID to the array of running tasks
+    # Add the current PID and PGID to the arrays of running tasks
     RUNNING_TASKS+=("$PID")
+    RUNNING_GROUPS+=("$PGID")
   done
 
+  # Wait for all running task PIDs
   wait "${RUNNING_TASKS[@]}"
 }
 
@@ -93,19 +88,18 @@ cleanup() {
 
   # Iterate over the array of running tasks and attempt to kill each one
   for pid in "${RUNNING_TASKS[@]}"; do
-    echo -e "\033[33m[WARNING] Killing task with PID ${pid}.\033[0m"
+    echo -e "\033[33m[WARNING] Stopping task with PID ${pid}.\033[0m"
     kill -TERM "$pid" 2>/dev/null || true
   done
 
-  # Check if pkill is available before attempting to use it
-  if command -v pkill &> /dev/null; then
-    pkill -TERM -P "$$"
-    pkill -TERM -g "$$"
-  fi
+  for pgid in "${RUNNING_GROUPS[@]}"; do
+    echo -e "\033[33m[WARNING] Stopping task group with PGID ${pgid}.\033[0m"
+    kill -TERM -$pgid 2>/dev/null || true
+  done
 
   # Clear the array of running tasks
   RUNNING_TASKS=()
-
+  RUNNING_GROUPS=()
   echo -e "\033[33m[INFO] Cleanup completed.\033[0m"
 }
 
@@ -137,6 +131,9 @@ TASK_STATUSES=()
 for pid in "${RUNNING_TASKS[@]}"; do
   wait "$pid"
   TASK_STATUSES+=($?)
+
+  # Remove completed tasks from RUNNING_TASKS
+  RUNNING_TASKS=("${RUNNING_TASKS[@]/$pid}")
 done
 
 # Print a message indicating that the script has stopped
