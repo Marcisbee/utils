@@ -20,7 +20,7 @@ Loads env variables from `.env` file.
 ./dotenv.sh .env.development -- node ./test.js
 ```
 
-## lslint.sh
+# lslint.sh
 
 This script helps you lint file paths in your project based on rules specified in a `.lslint` configuration file.
 
