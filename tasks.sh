@@ -41,6 +41,10 @@
 RUNNING_TASKS=()
 RUNNING_GROUPS=()
 
+# Capture and display the current PID and PGID before starting tasks
+CURRENT_PID=$$
+CURRENT_PGD=$(ps -o pgid= -p "$CURRENT_PID" | tr -d ' ')
+
 # Function to start a task and capture its output
 start_task() {
   local TASK_NAME=$1
@@ -75,7 +79,9 @@ start_task() {
 
     # Add the current PID and PGID to the arrays of running tasks
     RUNNING_TASKS+=("$PID")
-    RUNNING_GROUPS+=("$PGID")
+    if [ "$PGID" != "$CURRENT_PGD" ]; then
+      RUNNING_GROUPS+=("$PGID")
+    fi
   done
 
   # Wait for all running task PIDs
@@ -94,6 +100,11 @@ list_tasks() {
 
 # Function to perform cleanup
 cleanup() {
+  # Exit 1 if the number of running tasks is 0.
+  if [ "${#RUNNING_TASKS[@]}" -eq 0 ]; then
+    exit 1
+  fi
+
   echo -e "\033[33m[INFO] Cleanup initiated.\033[0m"
 
   # Iterate over the array of running tasks and attempt to kill each one
@@ -103,6 +114,13 @@ cleanup() {
 
   for pgid in "${RUNNING_GROUPS[@]}"; do
     kill -TERM -$pgid 2>/dev/null || true
+  done
+
+  pids=($(ps -o pid= -g "$CURRENT_PGD"))
+  for pid in "${pids[@]}"; do
+    if [ "$pid" -ne "$CURRENT_PID" ]; then
+      kill -TERM "$pid" 2>/dev/null || true
+    fi
   done
 
   # Clear the array of running tasks
@@ -135,6 +153,11 @@ for TASK_NAME in "${TASK_NAMES[@]}"; do
   start_task "$TASK_NAME"
 done
 
+# Exit 1 if the number of running tasks is 0.
+if [ "${#RUNNING_TASKS[@]}" -eq 0 ]; then
+  exit 1
+fi
+
 # Wait for all tasks to finish and store their exit statuses
 TASK_STATUSES=()
 for pid in "${RUNNING_TASKS[@]}"; do
@@ -149,7 +172,7 @@ done
 if [[ ${TASK_STATUSES[*]} =~ [1-9] ]]; then
   echo -e "\033[31m[ERROR] One or more tasks failed.\033[0m"
 else
-  echo -e "\033[32m[INFO] All tasks have completed successfully.\033[0m"
+  echo -e "\033[32m[INFO] All tasks done.\033[0m"
 fi
 
 # Return the highest exit status from all tasks
