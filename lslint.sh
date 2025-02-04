@@ -147,11 +147,11 @@ check_file_paths() {
 
   # Filter out paths that match the ignore rules
   local file_paths_invalid="$(echo "$file_paths" | grep -Ev "($ignore_regex)")"
-  error_count=($(echo -n "$file_paths_invalid" | wc -l))
 
   # Print invalid paths in red
-  echo "$file_paths_invalid" | while read -r path; do
+  for path in $file_paths_invalid; do
     if [[ -n "$path" ]]; then
+      ((error_count++))
       echo -e "\033[31minvalid\033[0m \033[4;30m${path#\/}\033[0m"
     fi
   done
