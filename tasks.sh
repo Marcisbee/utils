@@ -48,6 +48,7 @@ CURRENT_PGD=$(ps -o pgid= -p "$CURRENT_PID" | tr -d ' ')
 # Function to start a task and capture its output
 start_task() {
   local TASK_NAME=$1
+  shift  # Remove first argument (task name) to pass remaining arguments to the task
 
   # Split combined task names by '+'
   IFS='+' read -r -a TASK_LIST <<< "$TASK_NAME"
@@ -64,7 +65,7 @@ start_task() {
       local task_name="${SINGLE_TASK}"
       echo -e "\033[32m[INFO] Starting '${task_name}'.\033[0m"
 
-      task_"${task_name}" "$@"
+      task_"${task_name}" "$@"  # Pass all remaining arguments to the task
       TASK_STATUS=$?
 
       # Check if task status is not an error and display message accordingly
@@ -148,10 +149,9 @@ fi
 # Set up the trap for cleanup
 trap cleanup EXIT
 
-TASK_NAMES=("$@")
-for TASK_NAME in "${TASK_NAMES[@]}"; do
-  start_task "$TASK_NAME"
-done
+TASK_NAME="$1"
+shift
+start_task "$TASK_NAME" "$@"
 
 # Exit 1 if the number of running tasks is 0.
 if [ "${#RUNNING_TASKS[@]}" -eq 0 ]; then
