@@ -146,8 +146,8 @@ if [ $# -eq 0 ]; then
   exit 1
 fi
 
-# Set up the trap for cleanup
-trap cleanup EXIT
+# Set up the trap only for user-initiated termination signals
+trap cleanup SIGINT SIGTERM
 
 TASK_NAME="$1"
 shift
@@ -171,9 +171,8 @@ done
 # Print a message indicating that the script has stopped
 if [[ ${TASK_STATUSES[*]} =~ [1-9] ]]; then
   echo -e "\033[31m[ERROR] One or more tasks failed.\033[0m"
+  exit 1
 else
   echo -e "\033[32m[INFO] All tasks done.\033[0m"
+  exit 0
 fi
-
-# Return the highest exit status from all tasks
-exit ${TASK_STATUSES[*]}
