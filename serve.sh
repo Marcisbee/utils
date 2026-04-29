@@ -1,14 +1,34 @@
 #!/bin/bash
 
-# Usage: ./serve.sh [port] [root_directory]
+# Usage: ./serve.sh [port] [root_directory] [--spa]
 
 set -u
 
-PORT="${1:-8000}"
-ROOT="${2:-.}"
+SPA_MODE=false
+ARGS=()
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --spa)
+      SPA_MODE=true
+      ;;
+    *)
+      ARGS+=("$1")
+      ;;
+  esac
+  shift
+done
+
+PORT="${ARGS[0]:-8000}"
+ROOT="${ARGS[1]:-.}"
 
 if ! command -v nc >/dev/null 2>&1; then
   echo "Error: nc was not found on this machine." >&2
+  exit 1
+fi
+
+if ! nc -h 2>&1 | grep -Eq '(^|[[:space:]])-k([^[:alpha:]]|$)|\[[^]]*k[^]]*\]'; then
+  echo "Error: this script requires an nc version that supports the -k option." >&2
   exit 1
 fi
 
@@ -33,12 +53,28 @@ mime_type() {
     *.css) printf 'text/css; charset=utf-8' ;;
     *.js|*.mjs) printf 'application/javascript; charset=utf-8' ;;
     *.json) printf 'application/json; charset=utf-8' ;;
+    *.map) printf 'application/json; charset=utf-8' ;;
     *.svg) printf 'image/svg+xml' ;;
     *.png) printf 'image/png' ;;
     *.jpg|*.jpeg) printf 'image/jpeg' ;;
     *.gif) printf 'image/gif' ;;
     *.webp) printf 'image/webp' ;;
+    *.avif) printf 'image/avif' ;;
     *.ico) printf 'image/x-icon' ;;
+    *.wasm) printf 'application/wasm' ;;
+    *.woff) printf 'font/woff' ;;
+    *.woff2) printf 'font/woff2' ;;
+    *.ttf) printf 'font/ttf' ;;
+    *.otf) printf 'font/otf' ;;
+    *.pdf) printf 'application/pdf' ;;
+    *.xml) printf 'application/xml; charset=utf-8' ;;
+    *.csv) printf 'text/csv; charset=utf-8' ;;
+    *.mp4) printf 'video/mp4' ;;
+    *.webm) printf 'video/webm' ;;
+    *.mov) printf 'video/quicktime' ;;
+    *.mp3) printf 'audio/mpeg' ;;
+    *.wav) printf 'audio/wav' ;;
+    *.ogg) printf 'audio/ogg' ;;
     *.txt) printf 'text/plain; charset=utf-8' ;;
     *) printf 'application/octet-stream' ;;
   esac
@@ -56,13 +92,35 @@ send_text() {
   printf 'HTTP/1.1 %s\r\n' "$status"
   printf 'Content-Type: text/plain; charset=utf-8\r\n'
   printf 'Content-Length: %s\r\n' "${#body}"
+  printf 'Cache-Control: no-store\r\n'
   printf 'Connection: close\r\n'
   printf '\r\n'
   printf '%s' "$body"
 }
 
+send_file() {
+  local file="$1"
+  local method="$2"
+  local content_type content_length
+
+  content_type="$(mime_type "$file")"
+  content_length="$(wc -c < "$file" | tr -d ' ')"
+
+  printf 'HTTP/1.1 200 OK\r\n'
+  printf 'Content-Type: %s\r\n' "$content_type"
+  printf 'Content-Length: %s\r\n' "$content_length"
+  printf 'Cache-Control: no-store\r\n'
+  printf 'Connection: close\r\n'
+  printf '\r\n'
+
+  if [[ "$method" == "GET" ]]; then
+    cat "$file"
+  fi
+}
+
 handle_request() {
-  local request_line method target path file content_type content_length header
+  local request_line method target path file header accept_header
+  accept_header=""
 
   IFS= read -r request_line || return
   request_line="${request_line%$'\r'}"
@@ -74,6 +132,11 @@ handle_request() {
 
   while IFS= read -r header; do
     header="${header%$'\r'}"
+    case "$header" in
+      [Aa][Cc][Cc][Ee][Pp][Tt]:*)
+        accept_header="${header#*:}"
+        ;;
+    esac
     [[ -z "$header" ]] && break
   done
 
@@ -95,22 +158,16 @@ handle_request() {
   [[ -d "$file" ]] && file="$file/index.html"
 
   if [[ ! -f "$file" ]]; then
+    if [[ "$SPA_MODE" == "true" && -f "$ROOT/index.html" ]] && [[ "$path" != *.* || "$accept_header" == *text/html* ]]; then
+      send_file "$ROOT/index.html" "$method"
+      return
+    fi
+
     send_text "404 Not Found" "Not found: /$path"
     return
   fi
 
-  content_type="$(mime_type "$file")"
-  content_length="$(wc -c < "$file" | tr -d ' ')"
-
-  printf 'HTTP/1.1 200 OK\r\n'
-  printf 'Content-Type: %s\r\n' "$content_type"
-  printf 'Content-Length: %s\r\n' "$content_length"
-  printf 'Connection: close\r\n'
-  printf '\r\n'
-
-  if [[ "$method" == "GET" ]]; then
-    cat "$file"
-  fi
+  send_file "$file" "$method"
 }
 
 echo "Serving $ROOT at http://localhost:$PORT/"

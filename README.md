@@ -64,6 +64,16 @@ http://localhost:8000/
 
 Requests to `/` are mapped to `index.html`. This is intended for local development and simple static files, not production serving.
 
+The script requires `nc` with support for the `-k` option. If `nc` is missing or incompatible, it exits with a clear error.
+
+For single-page applications, use `--spa` to serve `index.html` for route-like paths that do not map to a real file:
+
+```sh
+./serve.sh 8000 ./dist --spa
+```
+
+Responses include `Cache-Control: no-store` so browser refreshes pick up changed CSS and JavaScript. The script serves common static file types including HTML, CSS, JavaScript, source maps, JSON, images, fonts, WASM, PDF, audio, and video.
+
 ## lslint.sh
 
 The `lslint.sh` script assists in linting the file paths within your project according to rules specified in a `.lslint` configuration file. This is helpful for maintaining consistency and ensuring that all necessary files adhere to the specified patterns.
