@@ -40,6 +40,30 @@ or
 curl -SsfL https://marcisbee.github.io/utils/dotenv.sh | bash -s -- .env.development -- node ./test.js
 ```
 
+## serve.sh
+
+The `serve.sh` script serves static files from a local directory using Bash and `nc`. It is useful when you need a tiny local web server for HTML, CSS, JavaScript, images, or JSON without requiring Node, PHP, or Python.
+
+### Usage:
+
+```sh
+./serve.sh 8000 ./public
+```
+
+or
+
+```sh
+curl -SsfL https://marcisbee.github.io/utils/serve.sh | bash -s -- 8000 ./public
+```
+
+Then open:
+
+```sh
+http://localhost:8000/
+```
+
+Requests to `/` are mapped to `index.html`. This is intended for local development and simple static files, not production serving.
+
 ## lslint.sh
 
 The `lslint.sh` script assists in linting the file paths within your project according to rules specified in a `.lslint` configuration file. This is helpful for maintaining consistency and ensuring that all necessary files adhere to the specified patterns.
